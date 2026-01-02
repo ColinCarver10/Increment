@@ -1,0 +1,38 @@
+{
+  "name": "daily-microlearning-email",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "typescript": "^5.4.0",
+    "effect": "^3.8.0",
+    "@effect/platform": "^0.60.0",
+    "@mui/material": "^5.15.0",
+    "@mui/icons-material": "^5.15.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@supabase/supabase-js": "^2.39.0",
+    "resend": "^3.2.0",
+    "stripe": "^14.21.0",
+    "openai": "^4.28.0",
+    "zod": "^3.22.0",
+    "date-fns-tz": "^2.0.0",
+    "jose": "^5.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0"
+  }
+}
+
