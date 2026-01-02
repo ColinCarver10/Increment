@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   Container,
@@ -11,10 +11,11 @@ import {
   Paper,
   Stack,
   Alert,
+  CircularProgress,
 } from "@mui/material"
 import { createClient } from "@/lib/supabase/client"
 
-export default function LoginPage() {
+function LoginForm() {
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
@@ -123,6 +124,29 @@ export default function LoginPage() {
         </Paper>
       </Box>
     </Container>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <Container maxWidth="sm">
+          <Box
+            sx={{
+              minHeight: "100vh",
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <CircularProgress />
+          </Box>
+        </Container>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   )
 }
 

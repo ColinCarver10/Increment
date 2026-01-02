@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Runtime, Effect } from "effect"
+import { Effect } from "effect"
 import { AdminRuntime } from "@/lib/effect/runtime"
 import { Scheduler } from "@/lib/effect/scheduler"
 import { AppConfig } from "@/lib/effect/config"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   try {
     // Verify cron secret
     const authHeader = request.headers.get("authorization")
     
-    const config = await Runtime.runPromise(
+    const config = await Effect.runPromise(
       Effect.provide(AppConfig, AdminRuntime)
     )
     const expectedSecret = config.cronSecret
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
       return yield* _(scheduler.processScheduledUsers())
     })
 
-    const results = await Runtime.runPromise(
+    const results = await Effect.runPromise(
       Effect.provide(schedulerEffect, AdminRuntime)
     )
 

@@ -68,7 +68,7 @@ Generate today's lesson in the exact JSON format specified.`
           Effect.tryPromise({
             try: async () => {
               const completion = await client.chat.completions.create({
-                model: "gpt-4o-mini",
+                model: "gpt-5.2",
                 messages: [
                   { role: "system", content: systemPrompt },
                   {

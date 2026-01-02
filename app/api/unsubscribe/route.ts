@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Runtime, Effect } from "effect"
+import { Effect } from "effect"
 import { AdminRuntime } from "@/lib/effect/runtime"
 import { SupabaseDb } from "@/lib/effect/supabase-db"
 import { AppConfig } from "@/lib/effect/config"
 import { verifyUnsubscribeToken } from "@/lib/utils/unsubscribe-token"
 
 export const runtime = "nodejs"
+export const dynamic = "force-dynamic"
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Token required" }, { status: 400 })
     }
 
-    const config = await Runtime.runPromise(Effect.provide(AppConfig, AdminRuntime))
+    const config = await Effect.runPromise(Effect.provide(AppConfig, AdminRuntime))
     const payload = await verifyUnsubscribeToken(token, config.unsubscribeSigningSecret)
 
     if (!payload) {
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       yield* _(supabaseDb.unsubscribe(payload.userId))
     })
 
-    await Runtime.runPromise(
+    await Effect.runPromise(
       Effect.provide(unsubscribeEffect, AdminRuntime)
     )
 

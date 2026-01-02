@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Runtime, Effect } from "effect"
+import { Effect } from "effect"
 import { createClient } from "@/lib/supabase/server"
 import { UserRuntime } from "@/lib/effect/runtime"
 import { StripeBilling } from "@/lib/effect/stripe-billing"
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const config = await Runtime.runPromise(Effect.provide(AppConfig, UserRuntime))
+    const config = await Effect.runPromise(Effect.provide(AppConfig, UserRuntime))
     const returnUrl = `${config.appUrl}/billing`
 
     const portalEffect = Effect.gen(function* (_) {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       return yield* _(stripeBilling.createBillingPortalSession(subscription.stripe_customer_id, returnUrl))
     })
 
-    const result = await Runtime.runPromise(
+    const result = await Effect.runPromise(
       Effect.provide(portalEffect, UserRuntime)
     )
 

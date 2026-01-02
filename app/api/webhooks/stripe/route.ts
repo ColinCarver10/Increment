@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     const stripeSecretKey = process.env.STRIPE_SECRET_KEY || ""
     const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ""
     
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" })
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
 
     let event: Stripe.Event
     try {
