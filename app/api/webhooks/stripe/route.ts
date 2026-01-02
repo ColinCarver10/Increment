@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { Runtime, Effect } from "effect"
+import { Effect } from "effect"
 import Stripe from "stripe"
 import { AdminRuntime } from "@/lib/effect/runtime"
 import { SupabaseDb } from "@/lib/effect/supabase-db"
 import { StripeBilling } from "@/lib/effect/stripe-billing"
-import { AppConfig } from "@/lib/effect/config"
 
 export const runtime = "nodejs"
 
@@ -17,15 +16,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No signature" }, { status: 400 })
     }
 
-    const config = await Runtime.runPromise(Effect.provide(AppConfig, AdminRuntime))
-    const stripe = new Stripe(config.stripeSecretKey, { apiVersion: "2024-06-20" })
+    // Use process.env directly since Effect Config doesn't load properly
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY || ""
+    const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || ""
+    
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" })
 
     let event: Stripe.Event
     try {
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        config.stripeWebhookSecret
+        stripeWebhookSecret
       )
     } catch (err) {
       console.error("Webhook signature verification failed:", err)
@@ -68,9 +70,8 @@ export async function POST(request: NextRequest) {
           )
         })
 
-        await Runtime.runPromise(
-          Effect.provide(webhookEffect, AdminRuntime)
-        )
+        const providedEffect = Effect.provide(webhookEffect, AdminRuntime) as Effect.Effect<void, any, never>
+        await Effect.runPromise(providedEffect)
       }
     } else if (
       event.type === "customer.subscription.created" ||

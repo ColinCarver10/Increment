@@ -16,6 +16,7 @@ export interface SupabaseDb {
     userId: string,
     updates: Partial<Pick<Profile, "topic" | "timezone" | "send_time" | "paused">>
   ) => Effect.Effect<Profile, DatabaseError>
+  readonly getAllActiveUsers: () => Effect.Effect<readonly Profile[], DatabaseError>
   readonly getUsersForScheduling: (
     currentHour: number,
     currentMinute: number
@@ -50,9 +51,14 @@ const createSupabaseClient = (
   useServiceRole: boolean = false,
   accessToken?: string
 ) => {
-  const key = useServiceRole ? config.supabaseServiceRoleKey : config.supabaseAnonKey
+  // Use process.env as fallback since Effect Config doesn't always load properly
+  const supabaseUrl = config.supabaseUrl || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || ""
+  const serviceRoleKey = config.supabaseServiceRoleKey || process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+  const anonKey = config.supabaseAnonKey || process.env.SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
   
-  const client = createClient(config.supabaseUrl, key, {
+  const key = useServiceRole ? serviceRoleKey : anonKey
+  
+  const client = createClient(supabaseUrl, key, {
     global: {
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
     },
@@ -129,6 +135,26 @@ export const SupabaseDbLive = (useServiceRole: boolean = false, accessToken?: st
           catch: (error) =>
             new DatabaseError({
               message: `Failed to update profile: ${String(error)}`,
+              cause: error,
+            }),
+        })
+
+      const getAllActiveUsers = () =>
+        Effect.tryPromise({
+          try: async () => {
+            // Get all active users (not paused, has topic)
+            const { data, error } = await client
+              .from("profiles")
+              .select("*")
+              .eq("paused", false)
+              .not("topic", "is", null)
+
+            if (error) throw error
+            return (data || []) as Profile[]
+          },
+          catch: (error) =>
+            new DatabaseError({
+              message: `Failed to get active users: ${String(error)}`,
               cause: error,
             }),
         })
@@ -347,6 +373,7 @@ export const SupabaseDbLive = (useServiceRole: boolean = false, accessToken?: st
       return SupabaseDb.of({
         getProfile,
         updateProfile,
+        getAllActiveUsers,
         getUsersForScheduling,
         getSubscription,
         upsertSubscription,

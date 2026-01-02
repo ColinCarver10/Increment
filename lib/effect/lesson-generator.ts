@@ -1,17 +1,16 @@
 import { Effect, Context, Layer } from "effect"
-import { LessonGenerationError } from "./errors"
+import { LessonGenerationError, OpenAIError, DatabaseError, ResendError } from "./errors"
 import { SupabaseDb } from "./supabase-db"
 import { OpenAI } from "./openai"
 import { ResendEmail } from "./resend-email"
 import { AppConfigService } from "./config"
 import { renderLessonEmail } from "../../components/email/templates"
-import { signUnsubscribeToken } from "../../utils/unsubscribe-token"
 import type { Profile, Lesson } from "../types/database"
 
 export interface LessonGenerator {
   readonly generateAndSendLesson: (
     profile: Profile
-  ) => Effect.Effect<Lesson, LessonGenerationError, SupabaseDb | OpenAI | ResendEmail | typeof AppConfigService>
+  ) => Effect.Effect<Lesson, LessonGenerationError | OpenAIError | DatabaseError | ResendError>
 }
 
 export const LessonGenerator = Context.GenericTag<LessonGenerator>("@app/LessonGenerator")

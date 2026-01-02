@@ -23,7 +23,12 @@ export const StripeBillingLive = Layer.effect(
   StripeBilling,
   Effect.gen(function* (_) {
     const config = yield* _(AppConfigService)
-    const stripe = new Stripe(config.stripeSecretKey, { apiVersion: "2024-06-20" })
+    // Use process.env directly as fallback since Effect Config doesn't always load properly
+    const stripeSecretKey = config.stripeSecretKey || process.env.STRIPE_SECRET_KEY || ""
+    const appUrl = config.appUrl || process.env.APP_URL || ""
+    const billingPortalConfigId = config.stripeBillingPortalConfigurationId || process.env.STRIPE_BILLING_PORTAL_CONFIGURATION_ID
+    
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" })
 
     const createCheckoutSession = (userId: string, userEmail: string, priceId: string) =>
       Effect.tryPromise({
@@ -32,8 +37,8 @@ export const StripeBillingLive = Layer.effect(
             customer_email: userEmail,
             mode: "subscription",
             line_items: [{ price: priceId, quantity: 1 }],
-            success_url: `${config.appUrl}/billing?success=true`,
-            cancel_url: `${config.appUrl}/billing?canceled=true`,
+            success_url: `${appUrl}/billing?success=true`,
+            cancel_url: `${appUrl}/billing?canceled=true`,
             metadata: {
               user_id: userId,
             },
@@ -58,8 +63,8 @@ export const StripeBillingLive = Layer.effect(
           const session = await stripe.billingPortal.sessions.create({
             customer: customerId,
             return_url: returnUrl,
-            ...(config.stripeBillingPortalConfigurationId && {
-              configuration: config.stripeBillingPortalConfigurationId,
+            ...(billingPortalConfigId && {
+              configuration: billingPortalConfigId,
             }),
           })
 

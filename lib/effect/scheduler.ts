@@ -1,16 +1,14 @@
 import { Effect, Context, Layer } from "effect"
-import { DatabaseError, LessonGenerationError } from "./errors"
+import { DatabaseError, LessonGenerationError, OpenAIError, ResendError } from "./errors"
 import { SupabaseDb } from "./supabase-db"
 import { LessonGenerator } from "./lesson-generator"
 import { formatInTimeZone } from "date-fns-tz"
-import { getCurrentTimeInTimezone } from "../utils/timezone"
 import type { Profile } from "../types/database"
 
 export interface Scheduler {
   readonly processScheduledUsers: () => Effect.Effect<
     readonly { userId: string; status: "sent" | "skipped"; reason?: string }[],
-    DatabaseError | LessonGenerationError,
-    SupabaseDb | LessonGenerator
+    DatabaseError | LessonGenerationError | OpenAIError | ResendError
   >
 }
 
@@ -36,24 +34,9 @@ export const SchedulerLive = Layer.effect(
     const processScheduledUsers = () =>
       Effect.gen(function* (_) {
         const now = new Date()
-        const currentHour = now.getUTCHours()
-        const currentMinute = now.getUTCMinutes()
 
-        // Get all active users
-        const allUsers = yield* _(
-          supabaseDb.getUsersForScheduling(currentHour, currentMinute)
-        )
-
-        // Filter users whose local time matches their send_time
-        const users = allUsers.filter((user) => {
-          try {
-            const userTime = getCurrentTimeInTimezone(user.timezone)
-            const userTimeStr = `${String(userTime.hour).padStart(2, "0")}:${String(userTime.minute).padStart(2, "0")}`
-            return userTimeStr === user.send_time
-          } catch {
-            return false
-          }
-        })
+        // Get all active users (not paused, has topic)
+        const users = yield* _(supabaseDb.getAllActiveUsers())
 
         const results: { userId: string; status: "sent" | "skipped"; reason?: string }[] = []
 
@@ -89,8 +72,6 @@ export const SchedulerLive = Layer.effect(
             })
             continue
           }
-
-          // Timezone match already verified in getUsersForScheduling
 
           // Generate and send lesson
           try {
